@@ -103,3 +103,8 @@ func (p *Pub) PublishRaw(id string, body []byte) error {
 func (p *Pub) Publish(string, proto.Message) error {
 	return nil
 }
+
+//Stop ...
+func (p *Pub) Stop() error {
+	return p.conn.Close()
+}
