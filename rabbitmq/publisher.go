@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/streadway/amqp"
 )
 
@@ -96,4 +97,9 @@ func (p *Pub) PublishRaw(id string, body []byte) error {
 		log.Println("rabbit err closing channel ", errClose)
 	}
 	return err
+}
+
+//Publish ...
+func (p *Pub) Publish(string, proto.Message) error {
+	return nil
 }
