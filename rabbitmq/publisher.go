@@ -23,33 +23,37 @@ const (
 
 //Pub ...
 type Pub struct {
-	conn  *amqp.Connection
-	url   string
-	queue string
-	mu    *sync.RWMutex
+	conn    *amqp.Connection
+	url     string
+	queue   string
+	headers map[string]string
+	retry   bool
+	mu      *sync.RWMutex
 }
 
 //InitRabbitPublisher ...
-func InitRabbitPublisher(url, queue string) (*Pub, error) {
+func InitRabbitPublisher(url, queue string, headers map[string]string, retry bool) (*Pub, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		log.Println("rabbit err conn", err)
 		return nil, err
 	}
 	return &Pub{
-		conn:  conn,
-		url:   url,
-		queue: queue,
-		mu:    &sync.RWMutex{},
+		conn:    conn,
+		url:     url,
+		queue:   queue,
+		headers: headers,
+		retry:   retry,
+		mu:      &sync.RWMutex{},
 	}, nil
 }
 
 //PublishRaw ...
-func (p *Pub) PublishRaw(body []byte, headersMap map[string]string, retry bool) error {
+func (p *Pub) PublishRaw(id string, body []byte) error {
 	oc, err := p.conn.Channel()
 	if err != nil {
 		log.Println("rabbit err channel ", err)
-		if retry {
+		if p.retry {
 			p.mu.RLock()
 			if p.conn != nil {
 				err = p.conn.Close()
@@ -70,7 +74,7 @@ func (p *Pub) PublishRaw(body []byte, headersMap map[string]string, retry bool) 
 	}
 
 	headers := amqp.Table{}
-	for k, v := range headersMap {
+	for k, v := range p.headers {
 		headers[k] = v
 	}
 
