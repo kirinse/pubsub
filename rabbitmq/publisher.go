@@ -1,7 +1,6 @@
 package rabbitmq
 
 import (
-	"context"
 	"log"
 	"sync"
 
@@ -45,8 +44,8 @@ func InitRabbitPublisher(url, queue string) (*Pub, error) {
 	}, nil
 }
 
-//Write ...
-func (p *Pub) Write(ctx context.Context, body []byte, headersMap map[string]string, retry bool) error {
+//PublishRaw ...
+func (p *Pub) PublishRaw(body []byte, headersMap map[string]string, retry bool) error {
 	oc, err := p.conn.Channel()
 	if err != nil {
 		log.Println("rabbit err channel ", err)
@@ -61,12 +60,10 @@ func (p *Pub) Write(ctx context.Context, body []byte, headersMap map[string]stri
 			p.conn, err = amqp.Dial(p.url)
 			p.mu.RUnlock()
 			if err != nil {
-				log.Println("rabbit err retry conn ", err)
 				return err
 			}
 			oc, err = p.conn.Channel()
 			if err != nil {
-				log.Println("rabbit err retry channel ", err)
 				return err
 			}
 		}
@@ -79,7 +76,6 @@ func (p *Pub) Write(ctx context.Context, body []byte, headersMap map[string]stri
 
 	err = oc.ExchangeDeclare(p.queue, exchangeType, durable, autoDelete, internal, noWait, headers)
 	if err != nil {
-		log.Println("rabbit err exchange declare ", err)
 		return err
 	}
 	err = oc.Publish(p.queue, p.queue, mandatory, immediate, amqp.Publishing{
